@@ -1,10 +1,10 @@
 import React from "react";
-import "./style.scss";
+import "./styles.scss";
 
 const Footer = (props) => {
   return (
     <footer className="footer">
-      <div className="wrap">© RetailCom 2021</div>
+      <div className="wrap">© SimpleTut 2020</div>
     </footer>
   );
 };

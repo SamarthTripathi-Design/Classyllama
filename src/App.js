@@ -1,39 +1,107 @@
-import React from "react";
-import { Route, Switch } from "react-router-dom";
+import React, { Component } from "react";
+import { Switch, Route, Redirect } from "react-router-dom";
+import { auth, handleUserProfile } from "./firebase/utils";
+
+// layouts
+import MainLayout from "./layouts/MainLayouts";
+import HomepageLayout from "./layouts/HomepageLayout";
+
+// pages
+import Homepage from "./pages/Homepages";
+import Registration from "./pages/Registration";
+import Login from "./pages/Login";
+import Recovery from "./pages/Recovery";
 import "./default.scss";
 
-//LAOUTS
-import MainLayouts from "./Layouts/MainLayouts";
-import HomepageLayouts from "./Layouts/HomepageLayout";
+const initialState = {
+  currentUser: null,
+};
 
-//PAGES
-import Homepage from "./Pages/Homepages";
-import Registration from "./Pages/Registration";
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      ...initialState,
+    };
+  }
 
-function App() {
-  return (
-    <div className="App">
-      <Switch>
-        <Route
-          exact
-          path="/"
-          render={() => (
-            <HomepageLayouts>
-              <Homepage />
-            </HomepageLayouts>
-          )}
-        />
-        <Route
-          path="/registration"
-          render={() => (
-            <MainLayouts>
-              <Registration />
-            </MainLayouts>
-          )}
-        />
-      </Switch>
-    </div>
-  );
+  authListener = null;
+
+  componentDidMount() {
+    this.authListener = auth.onAuthStateChanged(async (userAuth) => {
+      if (userAuth) {
+        const userRef = await handleUserProfile(userAuth);
+        userRef.onSnapshot((snapshot) => {
+          this.setState({
+            currentUser: {
+              id: snapshot.id,
+              ...snapshot.data(),
+            },
+          });
+        });
+      }
+
+      this.setState({
+        ...initialState,
+      });
+    });
+  }
+
+  componentWillUnmount() {
+    this.authListener();
+  }
+
+  render() {
+    const { currentUser } = this.state;
+
+    return (
+      <div className="App">
+        <Switch>
+          <Route
+            exact
+            path="/"
+            render={() => (
+              <HomepageLayout currentUser={currentUser}>
+                <Homepage />
+              </HomepageLayout>
+            )}
+          />
+          <Route
+            path="/registration"
+            render={() =>
+              currentUser ? (
+                <Redirect to="/" />
+              ) : (
+                <MainLayout currentUser={currentUser}>
+                  <Registration />
+                </MainLayout>
+              )
+            }
+          />
+          <Route
+            path="/login"
+            render={() =>
+              currentUser ? (
+                <Redirect to="/" />
+              ) : (
+                <MainLayout currentUser={currentUser}>
+                  <Login />
+                </MainLayout>
+              )
+            }
+          />
+          <Route
+            path="/recovery"
+            render={() => (
+              <MainLayout>
+                <Recovery />
+              </MainLayout>
+            )}
+          />
+        </Switch>
+      </div>
+    );
+  }
 }
 
 export default App;
